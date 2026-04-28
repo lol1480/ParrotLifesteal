@@ -11,9 +11,10 @@ public class GUIListener implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent e) {
 
+        // ✅ Check correct GUI
         if (!e.getView().getTitle().equals("Revive Player")) return;
 
-        e.setCancelled(true);
+        e.setCancelled(true); // 🔒 Prevent taking items
 
         if (e.getCurrentItem() == null) return;
         if (e.getCurrentItem().getType() != Material.PLAYER_HEAD) return;
@@ -24,38 +25,32 @@ public class GUIListener implements Listener {
                 e.getCurrentItem().getItemMeta().getDisplayName()
         );
 
+        // ❌ Not banned
         if (!Bukkit.getBanList(BanList.Type.NAME).isBanned(name)) {
             p.sendMessage(ChatColor.RED + "Player is not banned!");
             return;
         }
 
+        // ✅ Unban
         Bukkit.getBanList(BanList.Type.NAME).pardon(name);
 
         Player t = Bukkit.getPlayer(name);
 
         if (t != null) {
+
+            // ❤️ Give 1 heart
             HeartManager.set(t, 1);
 
-            if (InventoryManager.getInv(t.getUniqueId()) != null) {
-                t.getInventory().setContents(
-                        InventoryManager.getInv(t.getUniqueId())
-                );
-            }
-
-            if (InventoryManager.getArmor(t.getUniqueId()) != null) {
-                t.getInventory().setArmorContents(
-                        InventoryManager.getArmor(t.getUniqueId())
-                );
-            }
-
-            InventoryManager.remove(t.getUniqueId());
+            // 🔥 RESTORE INVENTORY (DUPE SYSTEM)
+            ReviveStorage.restore(t);
         }
 
-        // Remove beacon
+        // 🔥 Remove beacon (main hand)
         if (p.getInventory().getItemInMainHand().getType() == Material.BEACON) {
             p.getInventory().setItemInMainHand(null);
         }
 
+        // 🔥 Remove beacon (offhand)
         if (p.getInventory().getItemInOffHand().getType() == Material.BEACON) {
             p.getInventory().setItemInOffHand(null);
         }
