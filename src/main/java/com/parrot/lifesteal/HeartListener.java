@@ -9,9 +9,16 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.HashMap;
+import java.util.UUID;
+
 public class HeartListener implements Listener {
 
     private final int MAX_HEARTS = 20;
+
+    // ⏱️ cooldown system
+    private final HashMap<UUID, Long> cooldown = new HashMap<>();
+    private final long COOLDOWN_TIME = 5000; // 5 seconds
 
     @EventHandler
     public void onUse(PlayerInteractEvent e) {
@@ -28,6 +35,15 @@ public class HeartListener implements Listener {
 
         Player p = e.getPlayer();
 
+        // ⏱️ cooldown check
+        if (cooldown.containsKey(p.getUniqueId())) {
+            long last = cooldown.get(p.getUniqueId());
+            if (System.currentTimeMillis() - last < COOLDOWN_TIME) {
+                p.sendMessage(ChatColor.RED + "Wait before using another heart!");
+                return;
+            }
+        }
+
         int current = HeartManager.get(p);
         if (current >= MAX_HEARTS) {
             p.sendMessage(ChatColor.RED + "You are at max hearts!");
@@ -37,48 +53,22 @@ public class HeartListener implements Listener {
         HeartManager.set(p, current + 1);
         item.setAmount(item.getAmount() - 1);
 
+        cooldown.put(p.getUniqueId(), System.currentTimeMillis());
+
         p.sendMessage(ChatColor.GREEN + "+1 Heart!");
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
-
         Player dead = e.getEntity();
         Player killer = dead.getKiller();
 
-        // ✅ Save inventory
-        InventoryManager.save(
-                dead.getUniqueId(),
-                dead.getInventory().getContents(),
-                dead.getInventory().getArmorContents()
-        );
+        int newHearts = HeartManager.get(dead) - 1;
+        HeartManager.set(dead, newHearts);
 
-        // ❌ Clear default drops
-        e.getDrops().clear();
-
-        // ✅ Drop manually
-        for (ItemStack item : dead.getInventory().getContents()) {
-            if (item != null) {
-                dead.getWorld().dropItemNaturally(dead.getLocation(), item);
-            }
-        }
-
-        for (ItemStack item : dead.getInventory().getArmorContents()) {
-            if (item != null) {
-                dead.getWorld().dropItemNaturally(dead.getLocation(), item);
-            }
-        }
-
-        dead.getInventory().clear();
-        dead.getInventory().setArmorContents(null);
-
-        // ❤️ Heart system
-        int h = HeartManager.get(dead) - 1;
-        HeartManager.set(dead, h);
-
+        // 🗡️ killer reward
         if (killer != null) {
             if (HeartManager.get(killer) >= MAX_HEARTS) {
-
                 ItemStack heart = new ItemStack(Material.NETHER_STAR);
                 ItemMeta meta = heart.getItemMeta();
                 meta.setDisplayName(ChatColor.RED + "Heart");
@@ -88,18 +78,22 @@ public class HeartListener implements Listener {
 
                 heart.setItemMeta(meta);
                 killer.getInventory().addItem(heart);
-
             } else {
                 HeartManager.set(killer, Math.min(HeartManager.get(killer) + 1, MAX_HEARTS));
             }
         }
 
-        // ☠️ Ban at 0 hearts
-        if (h <= 0) {
+        // 💾 SAVE inventory for revive (DUPE SYSTEM)
+        ReviveStorage.save(dead);
+
+        // ⚠️ DO NOT CLEAR DROPS (we want dupe)
+        // killer takes items, revived player also gets them
+
+        if (newHearts <= 0) {
             Bukkit.getBanList(BanList.Type.NAME)
                     .addBan(dead.getName(), "Out of hearts", null, null);
 
-            dead.kickPlayer("You lost all hearts!");
+            dead.kickPlayer(ChatColor.RED + "You lost all hearts!");
         }
     }
 }
