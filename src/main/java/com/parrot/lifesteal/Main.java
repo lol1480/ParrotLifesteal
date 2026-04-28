@@ -1,6 +1,6 @@
-
 package com.parrot.lifesteal;
 
+import org.bukkit.Bukkit; // ✅ ADD THIS
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin {
@@ -19,6 +19,8 @@ public class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GUIListener(), this);
 
         getCommand("withdraw").setExecutor(new WithdrawCommand());
+
+        // ✅ Recipe
         Bukkit.addRecipe(RevivalRecipe.getRecipe());
     }
 
