@@ -19,6 +19,7 @@ public class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GUIListener(), this);
 
         getCommand("withdraw").setExecutor(new WithdrawCommand());
+        Bukkit.addRecipe(RevivalRecipe.getRecipe());
     }
 
     @Override
