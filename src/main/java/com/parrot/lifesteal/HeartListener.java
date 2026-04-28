@@ -16,9 +16,8 @@ public class HeartListener implements Listener {
 
     private final int MAX_HEARTS = 20;
 
-    // ⏱️ cooldown system
     private final HashMap<UUID, Long> cooldown = new HashMap<>();
-    private final long COOLDOWN_TIME = 5000; // 5 seconds
+    private final long COOLDOWN_TIME = 5000;
 
     @EventHandler
     public void onUse(PlayerInteractEvent e) {
@@ -35,7 +34,6 @@ public class HeartListener implements Listener {
 
         Player p = e.getPlayer();
 
-        // ⏱️ cooldown check
         if (cooldown.containsKey(p.getUniqueId())) {
             long last = cooldown.get(p.getUniqueId());
             if (System.currentTimeMillis() - last < COOLDOWN_TIME) {
@@ -60,15 +58,24 @@ public class HeartListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
+
         Player dead = e.getEntity();
         Player killer = dead.getKiller();
 
+        // ✅ SAVE inventory FIRST (correct timing)
+        ReviveStorage.save(dead);
+
+        // 🔥 Force KEEP inventory (so it doesn't get wiped)
+        // allow drops (dupe system)
+
+        // ❤️ remove heart
         int newHearts = HeartManager.get(dead) - 1;
         HeartManager.set(dead, newHearts);
 
         // 🗡️ killer reward
         if (killer != null) {
             if (HeartManager.get(killer) >= MAX_HEARTS) {
+
                 ItemStack heart = new ItemStack(Material.NETHER_STAR);
                 ItemMeta meta = heart.getItemMeta();
                 meta.setDisplayName(ChatColor.RED + "Heart");
@@ -78,17 +85,14 @@ public class HeartListener implements Listener {
 
                 heart.setItemMeta(meta);
                 killer.getInventory().addItem(heart);
+
             } else {
-                HeartManager.set(killer, Math.min(HeartManager.get(killer) + 1, MAX_HEARTS));
+                HeartManager.set(killer,
+                        Math.min(HeartManager.get(killer) + 1, MAX_HEARTS));
             }
         }
 
-        // 💾 SAVE inventory for revive (DUPE SYSTEM)
-        ReviveStorage.save(dead);
-
-        // ⚠️ DO NOT CLEAR DROPS (we want dupe)
-        // killer takes items, revived player also gets them
-
+        // ☠️ ban at 0 hearts
         if (newHearts <= 0) {
             Bukkit.getBanList(BanList.Type.NAME)
                     .addBan(dead.getName(), "Out of hearts", null, null);
