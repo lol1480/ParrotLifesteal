@@ -33,7 +33,7 @@ public class GUIListener implements Listener {
         }
 
         // ✅ Unban
-        target.setBanned(false);
+        Bukkit.getBanList(BanList.Type.NAME).pardon(target.getName());
 
         // ✅ Restore hearts
         if (target.isOnline()) {
