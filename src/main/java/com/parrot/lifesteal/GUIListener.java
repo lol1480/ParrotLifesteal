@@ -11,41 +11,58 @@ public class GUIListener implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent e) {
 
+        // ✅ Check correct GUI
         if (!e.getView().getTitle().equals("Revive Player")) return;
 
-        e.setCancelled(true); // 🔒 prevents taking skulls
+        e.setCancelled(true); // 🔒 Prevent taking items
 
         if (e.getCurrentItem() == null) return;
-
         if (e.getCurrentItem().getType() != Material.PLAYER_HEAD) return;
 
         Player p = (Player) e.getWhoClicked();
 
+        // ✅ Get player name from skull
         String name = ChatColor.stripColor(
                 e.getCurrentItem().getItemMeta().getDisplayName()
         );
 
-        OfflinePlayer target = Bukkit.getOfflinePlayer(name);
-
-        if (!target.isBanned()) {
+        // ✅ Check ban using modern API
+        if (!Bukkit.getBanList(BanList.Type.NAME).isBanned(name)) {
             p.sendMessage(ChatColor.RED + "Player is not banned!");
             return;
         }
 
-        // ✅ Unban
-        Bukkit.getBanList(BanList.Type.NAME).pardon(target.getName());
+        // ✅ Unban player
+        Bukkit.getBanList(BanList.Type.NAME).pardon(name);
 
-        // ✅ Restore hearts
-        if (target.isOnline()) {
-            Player t = target.getPlayer();
+        Player t = Bukkit.getPlayer(name);
+
+        if (t != null) {
+
+            // ❤️ Set 1 heart
             HeartManager.set(t, 1);
+
+            // 🎒 Restore inventory
+            ItemStack[] inv = InventoryManager.getInv(t.getUniqueId());
+            ItemStack[] armor = InventoryManager.getArmor(t.getUniqueId());
+
+            if (inv != null) {
+                t.getInventory().setContents(inv);
+            }
+
+            if (armor != null) {
+                t.getInventory().setArmorContents(armor);
+            }
+
+            InventoryManager.remove(t.getUniqueId());
         }
 
-        // ✅ Remove beacon (both hands)
+        // 🔥 Remove beacon (main hand)
         if (p.getInventory().getItemInMainHand().getType() == Material.BEACON) {
             p.getInventory().setItemInMainHand(null);
         }
 
+        // 🔥 Remove beacon (offhand)
         if (p.getInventory().getItemInOffHand().getType() == Material.BEACON) {
             p.getInventory().setItemInOffHand(null);
         }
