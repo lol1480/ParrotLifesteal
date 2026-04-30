@@ -45,8 +45,23 @@ public class GUIListener implements Listener {
             ReviveStorage.mark(target.getUniqueId());
         }
 
-        // 🔥 REMOVE BEACON
-        p.getInventory().remove(Material.BEACON);
+       ItemStack main = p.getInventory().getItemInMainHand();
+ItemStack off = p.getInventory().getItemInOffHand();
+
+// ✅ remove ONLY ONE beacon
+if (main.getType() == Material.BEACON) {
+    if (main.getAmount() > 1) {
+        main.setAmount(main.getAmount() - 1);
+    } else {
+        p.getInventory().setItemInMainHand(null);
+    }
+} else if (off.getType() == Material.BEACON) {
+    if (off.getAmount() > 1) {
+        off.setAmount(off.getAmount() - 1);
+    } else {
+        p.getInventory().setItemInOffHand(null);
+    }
+}
 
         p.sendMessage(ChatColor.GREEN + "Revived " + name);
         p.closeInventory();
