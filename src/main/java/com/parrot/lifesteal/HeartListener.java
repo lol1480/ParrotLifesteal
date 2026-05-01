@@ -34,6 +34,7 @@ public class HeartListener implements Listener {
 
         Player p = e.getPlayer();
 
+        // ⏱️ cooldown
         if (cooldown.containsKey(p.getUniqueId())) {
             long last = cooldown.get(p.getUniqueId());
             if (System.currentTimeMillis() - last < COOLDOWN_TIME) {
@@ -62,18 +63,17 @@ public class HeartListener implements Listener {
         Player dead = e.getEntity();
         Player killer = dead.getKiller();
 
-        // ✅ SAVE inventory FIRST (correct timing)
-        ReviveStorage.save(dead);
-
-        // 🔥 Force KEEP inventory (so it doesn't get wiped)
-        // allow drops (dupe system)
-
-        // ❤️ remove heart
-        int newHearts = HeartManager.get(dead) - 1;
-        HeartManager.set(dead, newHearts);
-
-        // 🗡️ killer reward
+        // ❗ ONLY run lifesteal if killed by player
         if (killer != null) {
+
+            // 💾 save inventory (dupe system)
+            ReviveStorage.save(dead);
+
+            // ❤️ remove heart
+            int newHearts = HeartManager.get(dead) - 1;
+            HeartManager.set(dead, newHearts);
+
+            // 🗡️ killer reward
             if (HeartManager.get(killer) >= MAX_HEARTS) {
 
                 ItemStack heart = new ItemStack(Material.NETHER_STAR);
@@ -90,14 +90,18 @@ public class HeartListener implements Listener {
                 HeartManager.set(killer,
                         Math.min(HeartManager.get(killer) + 1, MAX_HEARTS));
             }
-        }
 
-        // ☠️ ban at 0 hearts
-        if (newHearts <= 0) {
-            Bukkit.getBanList(BanList.Type.NAME)
-                    .addBan(dead.getName(), "Out of hearts", null, null);
+            // ☠️ ban at 0 hearts
+            if (newHearts <= 0) {
+                Bukkit.getBanList(BanList.Type.NAME)
+                        .addBan(dead.getName(), "Out of hearts", null, null);
 
-            dead.kickPlayer(ChatColor.RED + "You lost all hearts!");
+                dead.kickPlayer(ChatColor.RED + "You lost all hearts!");
+            }
+
+        } else {
+            // 🧠 death by zombie / fall / lava
+            dead.sendMessage(ChatColor.YELLOW + "No hearts lost (not killed by player)");
         }
     }
 }
