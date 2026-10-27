@@ -1,9 +1,0 @@
-
-name: ParrotLifesteal
-version: 10.0
-main: com.parrot.lifesteal.Main
-api-version: 1.21
-
-commands:
-  withdraw:
-    description: Withdraw a heart
