@@ -1,0 +1,17 @@
+name: Mine3x3
+version: '${project.version}'
+main: dev.example.mine3x3.Mine3x3Plugin
+api-version: '26.2'
+description: Toggle 3x3 area mining with a command.
+
+commands:
+  mine3x3:
+    description: Toggle 3x3 mining on or off.
+    usage: /<command> [on|off]
+    aliases: [3x3, hammer]
+    permission: mine3x3.use
+
+permissions:
+  mine3x3.use:
+    description: Allows using /mine3x3.
+    default: true
